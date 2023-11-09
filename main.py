@@ -6,12 +6,13 @@ from opera_db import carrega_pedidos_nao_contatados, is_pedido_lido, insere_vend
 from opera_wpp import envia_msg
 import time, re, datetime as dt
 
-
 profile = 'Profile 2'#Irene
 profile = 'Profile 7'#Mineiro
 profile = 'Default'#Jaque
 
 options = webdriver.ChromeOptions()
+options.add_argument('--no-sandbox')
+options.add_argument('--disable-dev-shm-usage')
 options.add_argument("user-data-dir=C:/Users/Felipe/AppData/Local/Google/Chrome/User Data")
 options.add_argument(f'profile-directory={profile}')
 
