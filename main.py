@@ -7,6 +7,8 @@ from opera_wpp import envia_msg
 import time, re, datetime as dt
 import tkinter as tk
 import tkinter.messagebox as msgbox
+import pyautogui
+import pymsgbox
 
 def carregar_pagina_pedidos(driver):
     if driver.current_url.count('https://web.ideris.com.br/pedido/pesquisa') == 0:
@@ -175,6 +177,18 @@ while rodando:
             root.after(5000, root.destroy)
             msgbox.showinfo('Atenção!', "Novas vendas identificadas. Para o correto funcionamento do programa, não mexa no navegador que seja liberado.", master=root)
 
+            xy = 250
+            pyautogui.moveTo(xy,xy)
+            pymsgbox.rootWindowPosition = f"+{xy}+{xy}"
+
+            pyautogui.FAILSAFE = False
+            pyautogui.alert(title='ATENÇÂO', text='Nova(s) compra(s) identificadas. Não mexa na aba do whatsApp!', timeout=3000)
+            vendedores = ['Felipe', 'Isa']
+            vendedor = pyautogui.confirm(title='Vendedor', text='Identidique quem está atendendo no momento', timeout=7000, buttons=vendedores)
+            if vendedor == 'Timeout':
+                vendedor = vendedores[0]
+            print(vendedor)
+
         for dict_venda in list_vendas_x:
             if len(dict_venda['telefones']) == 0:
                 print(dict_venda['comprador'], 'Não tem telefone')
@@ -185,7 +199,7 @@ while rodando:
             msg_list.append(('Hope!:salute', Keys.ENTER))
             msg_list.append('')
             msg_list.append(f'*{dict_venda["comprador"]}?*')
-            msg_list.append('Felipe da Tatical Militaria, tudo bem guerreiro(a)?')
+            msg_list.append(f'{vendedor} da Tatical Militaria, tudo bem guerreiro(a)?')
             msgProdutos : str = 'Recebi seu pedido via mercado livre:'
             for i,item in enumerate(dict_venda['itens']):
                 if i > 0:
