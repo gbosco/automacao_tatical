@@ -37,9 +37,11 @@ def envia_msg(driver : webdriver.Chrome, telefone: str, msg, enviar=True):
     driver.find_element(*seletor_input_msg).send_keys(Keys.ENTER)
     driver.find_element(By.CSS_SELECTOR, '#main > div._3B19s > div > div._5kRIK > div.n5hs2j7m.oq31bsqd.gx1rr48f.qh5tioqs > div:last-child > div > div > div.UzMP7._1uv-a > div._1BOF7._2AOIt > div:nth-child(2) > div > div.copyable-text > div > span._11JPr.selectable-text.copyable-text > span > a').click()
     time.sleep(5)
-    if len(driver.find_elements(By.CSS_SELECTOR,'#app > div > span:nth-child(4) > div > ul > div > li')) == 1:
+    if len(driver.find_elements(By.CSS_SELECTOR,'#app > div > span:nth-child(6) > div > ul > div > li')) == 1:
         raise Exception('sem_wpp')
-    driver.find_element(By.CSS_SELECTOR,'#app > div > span:nth-child(4) > div > ul > div > li').click()
+    
+    #driver.find_element(By.CSS_SELECTOR,'#app > div > span:nth-child(4) > div > ul > div > li').click()
+    driver.find_element(By.CSS_SELECTOR,'#app > div > span:nth-child(6) > div > ul > div > li').click()
     time.sleep(3)
 
     input_box_msg = driver.find_element(*seletor_input_msg)

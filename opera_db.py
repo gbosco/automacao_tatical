@@ -2,7 +2,7 @@ import sqlite3
 from pathlib import Path
 import datetime
 
-ROOT_DIR = Path('').parent
+ROOT_DIR = Path('C:/Users/Felipe/OneDrive/Área de Trabalho/Bosco/Projects/wpp_automacao/wpp_automacao_tatical/db.sqlite3').parent
 DB_NAME = 'db.sqlite3'
 DB_FILE = ROOT_DIR / DB_NAME
 
