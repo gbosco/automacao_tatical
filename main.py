@@ -6,7 +6,7 @@ from opera_db import carrega_pedidos_nao_contatados, is_pedido_lido, insere_vend
 from opera_wpp import envia_msg
 import time, re, datetime as dt
 import tkinter as tk
-import tkinter.messagebox as msgbox
+#import tkinter.messagebox as msgbox
 import pyautogui
 import pymsgbox
 
@@ -175,16 +175,15 @@ while rodando:
             root = tk.Tk()
             root.withdraw()
             root.after(5000, root.destroy)
-            msgbox.showinfo('Atenção!', "Novas vendas identificadas. Para o correto funcionamento do programa, não mexa no navegador que seja liberado.", master=root)
 
             xy = 250
             pyautogui.moveTo(xy,xy)
             pymsgbox.rootWindowPosition = f"+{xy}+{xy}"
 
             pyautogui.FAILSAFE = False
-            pyautogui.alert(title='ATENÇÂO', text='Nova(s) compra(s) identificadas. Não mexa na aba do whatsApp!', timeout=3000)
-            vendedores = ['Felipe', 'Isa']
-            vendedor = pyautogui.confirm(title='Vendedor', text='Identidique quem está atendendo no momento', timeout=7000, buttons=vendedores)
+            pyautogui.alert(title='ATENÇÂO', text='Nova(s) compra(s) identificadas. Não mexa na aba do whatsApp!', timeout=5000)
+            vendedores = ['Felipe', 'Isadora']
+            vendedor = pyautogui.confirm(title='Vendedor', text='Identidique quem está atendendo no momento', timeout=12000, buttons=vendedores)
             if vendedor == 'Timeout':
                 vendedor = vendedores[0]
             print(vendedor)
@@ -236,7 +235,7 @@ while rodando:
             root = tk.Tk()
             root.withdraw()
             root.after(5000, root.destroy)
-            msgbox.showinfo('Liberado', "O programa já chamou todas as pessoas. Agora você pode continuar usando o navegador.", master=root)
+            pyautogui.alert(title='PRONTO!!!', text='O programa já chamou todas as pessoas. Agora você pode continuar usando o navegador.!', timeout=3000)
 
 
         time.sleep(30)
