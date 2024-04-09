@@ -7,8 +7,7 @@ from opera_wpp import envia_msg
 import time, re, datetime as dt
 import tkinter as tk
 #import tkinter.messagebox as msgbox
-import pyautogui
-import pymsgbox
+import pyautogui, pymsgbox, winsound
 
 def carregar_pagina_pedidos(driver):
     if driver.current_url.count('https://web.ideris.com.br/pedido/pesquisa') == 0:
@@ -31,7 +30,7 @@ rodando = True
 
 while rodando:
     try:
-        driver.refresh()
+        #driver.refresh()
         carregar_pagina_pedidos(driver)
         cont = 0
 
@@ -44,7 +43,7 @@ while rodando:
         while len(driver.find_elements(By.CSS_SELECTOR, '#ordertab')) == 0 and not continuar:
             time.sleep(1)
             cont = cont + 1
-            if cont > 60:
+            if cont > 30:
                 continuar = True
         if continuar:
             continue
@@ -145,20 +144,20 @@ while rodando:
             driver.find_element(By.ID, 'btn-consultar-doc').click()
             
             contador_espera = 0
-            while len(driver.find_elements(By.ID, '#telefones')) == 0 and \
-                len(driver.find_elements(By.CSS_SELECTOR, '#lc-drop-filter > div:nth-child(1) > div > div > div:nth-child(3) > form > div:nth-child(2) > span')) ==0:
+            while len(driver.find_elements(By.CSS_SELECTOR, 'div.phone')) == 0:
                 time.sleep(0.1)
                 contador_espera += 1
                 if contador_espera > 100:
                     break
-            
+            '''
             if len(driver.find_elements(By.CSS_SELECTOR, 'div.MuiGrid-root.MuiGrid-container.MuiGrid-item.MuiGrid-direction-xs-column.MuiGrid-align-items-xs-center > h6')) > 0 and \
             driver.find_element(By.CSS_SELECTOR, 'div.MuiGrid-root.MuiGrid-container.MuiGrid-item.MuiGrid-direction-xs-column.MuiGrid-align-items-xs-center > h6').text.upper().count('NÃO LOCALIZAMOS NENHUM TELEFONE') > 0:
-                driver.find_element(By.ID,'btn-mais-telefones').click()
+                #driver.find_element(By.ID,'btn-mais-telefones').click()
+                driver.find_element(By.XPATH,  f'//a[text() = "CONSULTAR TELEFONES RELACIONADOS"]').click()
                 time.sleep(2)
-
+            '''
             list_telefones = list()
-            for telefone_html in driver.find_elements(By.CSS_SELECTOR,'h5'):
+            for telefone_html in driver.find_elements(By.CSS_SELECTOR, 'div.phone'):
                 if len(telefone_html.text) > 1 and len(telefone_html.text) < 16:
                     print(telefone_html.text)
                     list_telefones.append(telefone_html.text)
@@ -180,6 +179,10 @@ while rodando:
             pyautogui.moveTo(xy,xy)
             pymsgbox.rootWindowPosition = f"+{xy}+{xy}"
 
+            winsound.Beep(550, 700)
+            winsound.Beep(450, 700)
+            winsound.Beep(350, 700)
+            
             pyautogui.FAILSAFE = False
             pyautogui.alert(title='ATENÇÂO', text='Nova(s) compra(s) identificadas. Não mexa na aba do whatsApp!', timeout=5000)
             vendedores = ['Felipe', 'Isadora']
@@ -240,4 +243,6 @@ while rodando:
 
         time.sleep(30)
     except Exception as ex:
+        time.sleep(5)
         print('Excption:::', ex)
+
