@@ -34,10 +34,9 @@ while rodando:
         carregar_pagina_pedidos(driver)
         cont = 0
 
-        if len(driver.find_elements(By.CSS_SELECTOR, '#divRight > div > form > div > div.my-5 > div.text-left.d-grid > button')) > 0:
-            driver.find_element(By.CSS_SELECTOR, '#divRight > div > form > div > div.my-5 > div.text-left.d-grid > button').click()
-            time.sleep(5)
-            carregar_pagina_pedidos(driver)
+        if len(driver.find_elements(By.XPATH, f'//a[text() = "Esqueci minha senha"]')) > 0:
+            time.sleep(30)
+            continue
 
         continuar = False
         while len(driver.find_elements(By.CSS_SELECTOR, '#ordertab')) == 0 and not continuar:
@@ -183,11 +182,6 @@ while rodando:
             
             pyautogui.FAILSAFE = False
             pyautogui.alert(title='ATENÇÂO', text='Nova(s) compra(s) identificadas. Não mexa na aba do whatsApp!', timeout=5000)
-            vendedores = ['Felipe', 'Isadora']
-            vendedor = pyautogui.confirm(title='Vendedor', text='Identidique quem está atendendo no momento', timeout=12000, buttons=vendedores)
-            if vendedor == 'Timeout':
-                vendedor = vendedores[0]
-            print(vendedor)
 
         for dict_venda in list_vendas_x:
             if len(dict_venda['telefones']) == 0:
@@ -199,7 +193,7 @@ while rodando:
             msg_list.append(('Hope!:salute', Keys.ENTER))
             msg_list.append('')
             msg_list.append(f'*{dict_venda["comprador"]}?*')
-            msg_list.append(f'{vendedor} da Tatical Militaria, tudo bem guerreiro(a)?')
+            msg_list.append(f'Aqui é da Tatical Militaria, tudo bem guerreiro(a)?')
             msgProdutos : str = 'Recebi seu pedido via mercado livre:'
             for i,item in enumerate(dict_venda['itens']):
                 if i > 0:
