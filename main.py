@@ -149,13 +149,11 @@ while rodando:
                 contador_espera += 1
                 if contador_espera > 100:
                     break
-            '''
-            if len(driver.find_elements(By.CSS_SELECTOR, 'div.MuiGrid-root.MuiGrid-container.MuiGrid-item.MuiGrid-direction-xs-column.MuiGrid-align-items-xs-center > h6')) > 0 and \
-            driver.find_element(By.CSS_SELECTOR, 'div.MuiGrid-root.MuiGrid-container.MuiGrid-item.MuiGrid-direction-xs-column.MuiGrid-align-items-xs-center > h6').text.upper().count('NÃO LOCALIZAMOS NENHUM TELEFONE') > 0:
-                #driver.find_element(By.ID,'btn-mais-telefones').click()
+            
+            if len(driver.find_elements(By.XPATH,  f'//a[text() = "Não localizamos nenhum telefone"]')) > 0:
                 driver.find_element(By.XPATH,  f'//a[text() = "CONSULTAR TELEFONES RELACIONADOS"]').click()
-                time.sleep(2)
-            '''
+                time.sleep()
+            
             list_telefones = list()
             for telefone_html in driver.find_elements(By.CSS_SELECTOR, 'div.phone'):
                 if len(telefone_html.text) > 1 and len(telefone_html.text) < 16:
