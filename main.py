@@ -28,70 +28,46 @@ options.add_argument(f'profile-directory={profile}')
 driver = webdriver.Chrome(options=options)
 rodando = True
 
+driver.get('https://taticalmilitaria.painel.magazord.com.br')
+#time.sleep(2)
+#if len(driver.find_elements(By.ID, 'email')) > 0:
+time.sleep(30)
+
 while rodando:
     try:
-        #driver.refresh()
-        carregar_pagina_pedidos(driver)
-        cont = 0
-
-        if len(driver.find_elements(By.XPATH, f'//a[text() = "Esqueci minha senha"]')) > 0:
-            time.sleep(30)
-            continue
-
-        continuar = False
-        while len(driver.find_elements(By.CSS_SELECTOR, '#ordertab')) == 0 and not continuar:
-            time.sleep(1)
-            cont = cont + 1
-            if cont > 30:
-                continuar = True
-        if continuar:
-            continue
-
-        lista_pedido_html = driver.find_elements(By.CSS_SELECTOR, '#ordertab > tbody > tr')
-
-        lista_num_pedido = []
-        for i in range(0, len(lista_pedido_html)):
-            if i % 2 != 0:
-                pedido_html_cabecalho = lista_pedido_html[i-1]
-                pedido_html           = lista_pedido_html[i]
-                n_pedido = pedido_html.find_element(By.CSS_SELECTOR, 'td.w-30 > div > div > div.mb-6 > div:nth-child(5) > span').text
-                
-                if len(pedido_html_cabecalho.find_elements(By.CSS_SELECTOR, 'span.me-2.badge.badge-warning')) > 0 and \
-                    pedido_html_cabecalho.get_attribute('class').count('d-none') == 0:
-                    if not is_pedido_lido(n_pedido):
-                        lista_num_pedido.append(n_pedido)
-
+        #Atualizar pedidos
+        driver.find_element(By.XPATH, "//*[text()='Atualizar']").click()
 
         list_vendas = list()
-        for num_pedido in lista_num_pedido:
-            driver.get(f'https://web.ideris.com.br/pedido/detalhepedido/{num_pedido}')
-            while len(driver.find_elements(By.CSS_SELECTOR, '#kt_customer_view_details > div')) == 0:
-                time.sleep(1)
-            nome = driver.find_element(By.CSS_SELECTOR, '#kt_customer_view_details > div > div:nth-child(1)').text
-            nome = nome.replace(driver.find_element(By.CSS_SELECTOR, '#kt_customer_view_details > div > div:nth-child(1) > a').text, '')
-                                                                    
-            html_contem_cpf = driver.find_element(By.CSS_SELECTOR, '#kt_customer_view_details > div > div:nth-child(5)').text
-            #html_contem_cpf = driver.find_element(By.CSS_SELECTOR, '#kt_post > div > div > div.col-8 > div:nth-child(4)').text
-            procura_cpf_cnpj = re.search(r'[0-9]{14}', html_contem_cpf)
-            if procura_cpf_cnpj is None:
-                procura_cpf_cnpj = re.search(r'[0-9]{11}', html_contem_cpf)
-            #cpf_cnpj = procura_cpf_cnpj.group().replace('CPF ', '').replace('CNPJ ', '')
-            cpf_cnpj = procura_cpf_cnpj.group()
+        for tr in driver.find_elements(By.CSS_SELECTOR, 'tr.x-grid-row'):
+            num_pedido = tr.find_element(By.CSS_SELECTOR, 'td:nth-child(3)').text
+            if is_pedido_lido(num_pedido):
+                continue
+            chechbox = tr.find_element(By.CSS_SELECTOR, 'td:nth-child(3)')
+            chechbox.click()
+            driver.find_element(By.XPATH, "//*[text()='Visualizar']").click()
+            time.sleep(2)
 
+            #Dentro da página do pedido
+            nome = driver.find_elements(By.XPATH, "//*[text()='Cliente']//..//..//..")[-1].text
+
+            text_pagina = driver.find_element(By.CSS_SELECTOR, 'body').text
+            re_cpf_cnpj = re.search(r'\b\d{3}\.\d{3}\.\d{3}-\d{2}\b', text_pagina)
+            if not re_cpf_cnpj:
+                re_cpf_cnpj = re.search(r'\b\d{2}\.\d{3}\.\d{3}/\d{4}-\d{2}\b', text_pagina)
+            cpf_cnpj = re_cpf_cnpj.group()
+            
             dict_venda = dict(nome=nome,documento=cpf_cnpj,num_pedido=num_pedido)
             print('Nome:', nome, 'CPF:', cpf_cnpj)
+            ######
+
 
             list_venda_item = list()
-            produtos_html = driver.find_elements(By.CSS_SELECTOR, '#kt_post > div > div > div.col-4 > div > div')
-            
-            for produto_html in produtos_html:
-                nome_produto = produto_html.find_element(By.TAG_NAME, 'b').text
-                
-                qtd_produto  = re.search(r'[0-9]{1,3} unidade', produto_html.text).group(0).replace(' unidade', '')
+            for produto_html in driver.find_elements(By.CSS_SELECTOR, '.swiper-slide-active'):
+                nome_produto = produto_html.find_element(By.CSS_SELECTOR, '.nomeProduto').text
+                qtd_produto  = produto_html.find_element(By.CSS_SELECTOR, '.itemValue').text
 
-                variacao_produto = produto_html.find_element(By.CSS_SELECTOR, 'div > div > div:nth-child(2) > div > div:nth-child(1) > p:nth-child(4)').text
-                print(nome_produto, ' - ', variacao_produto)
-                list_venda_item.append((nome_produto, qtd_produto,variacao_produto))
+                list_venda_item.append((nome_produto, qtd_produto,''))
 
             dict_venda['itens'] = list_venda_item
             list_vendas.append(dict_venda)
@@ -234,6 +210,7 @@ while rodando:
 
 
         time.sleep(30)
+    
     except Exception as ex:
         time.sleep(5)
         print('Excption:::', ex)
