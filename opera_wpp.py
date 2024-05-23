@@ -13,11 +13,9 @@ def shift_enter(driver):
             .perform()
     
 
-def envia_msg(driver : webdriver.Chrome, telefone: str, msg, enviar=True):
+def envia_msg(driver : webdriver.Chrome, telefone: str, msg, enviar=True, comprador = ''):
     abre_aba_wpp(driver)
     telefone = telefone.replace(' ', '').replace('(','').replace(')', '').replace('-', '')
-    seletor_input_msg = (By.CSS_SELECTOR, 'div[title="Digite uma mensagem"')
-    
                                            
     seletor_div_conversas = (By.CSS_SELECTOR, '#pane-side > div > div > div > div')
     carregando = True
@@ -25,6 +23,8 @@ def envia_msg(driver : webdriver.Chrome, telefone: str, msg, enviar=True):
         if len(driver.find_elements(*seletor_div_conversas)) > 0:
           carregando = False
         time.sleep(0.1)
+    
+    seletor_input_msg = (By.CSS_SELECTOR, 'div[aria-label="Digite uma mensagem"')
     
     element_grupo_abordagem = None
     for element in driver.find_elements(*seletor_div_conversas):
@@ -34,6 +34,10 @@ def envia_msg(driver : webdriver.Chrome, telefone: str, msg, enviar=True):
             break
     
     time.sleep(5)
+    if comprador:
+        driver.find_element(*seletor_input_msg).send_keys('*'+comprador+'*')
+        driver.find_element(*seletor_input_msg).send_keys(Keys.ENTER)
+    
     driver.find_element(*seletor_input_msg).send_keys(telefone)
     driver.find_element(*seletor_input_msg).send_keys(Keys.ENTER)
     
