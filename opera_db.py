@@ -2,11 +2,12 @@ import sqlite3
 from pathlib import Path
 import datetime
 
-ROOT_DIR = Path('C:/Users/Felipe/OneDrive/Área de Trabalho/Bosco/Projects/wpp_automacao/wpp_automacao_tatical/db.sqlite3').parent
+ROOT_DIR = Path('C:/Users/vinic/PyProjects/automacao_tatical/automacao_tatical/db.sqlite3').parent
 DB_NAME = 'db.sqlite3'
 DB_FILE = ROOT_DIR / DB_NAME
 
 def is_pedido_lido(numero_pedido):
+    
     connection = sqlite3.connect(DB_FILE)
     cursor = connection.cursor()
 
@@ -24,20 +25,21 @@ def insere_venda(numero_pedido, nome_comprador, documento, itens = [], telefones
     connection = sqlite3.connect(DB_FILE)
     cursor = connection.cursor()
 
-    cursor.execute('INSERT INTO VENDAS (NUMERO_IDR, COMPRADOR, DOCUMENTO, FOI_CHAMADO, DATAHORA) VALUES (?,?,?,?,?)',\
-                   [numero_pedido, nome_comprador, documento,0,datetime.datetime.now()])
-    id = cursor.execute('SELECT ID FROM VENDAS WHERE NUMERO_IDR = ?', [numero_pedido]).fetchone()[0]
+    try:
+        cursor.execute('INSERT INTO VENDAS (NUMERO_IDR, COMPRADOR, DOCUMENTO, FOI_CHAMADO, DATAHORA) VALUES (?,?,?,?,?)',\
+                    [numero_pedido, nome_comprador, documento,0,datetime.datetime.now()])
+        id = cursor.execute('SELECT ID FROM VENDAS WHERE NUMERO_IDR = ?', [numero_pedido]).fetchone()[0]
 
-    for item in itens:
-        produto, qtd, variacao = item
-        cursor.execute('INSERT INTO VENDAS_ITENS (DESCRICAO, QTD, VARIACAO, ID_VENDAS) VALUES (?,?,?,?)', [produto, qtd, variacao, id])
-    
-    for telefone in telefones:
-        cursor.execute('INSERT INTO VENDAS_TELEFONES (TELEFONE, ID_VENDAS) VALUES (?,?)', [telefone, id])
-
-    connection.commit()
-    cursor.close()
-    connection.close()
+        for item in itens:
+            produto, qtd, variacao = item
+            cursor.execute('INSERT INTO VENDAS_ITENS (DESCRICAO, QTD, VARIACAO, ID_VENDAS) VALUES (?,?,?,?)', [produto, qtd, str(int(variacao)), id])
+        
+        for telefone in telefones:
+            cursor.execute('INSERT INTO VENDAS_TELEFONES (TELEFONE, ID_VENDAS) VALUES (?,?)', [telefone, id])
+        connection.commit()
+    finally:
+        cursor.close()
+        connection.close()
 
 def carrega_pedidos_nao_contatados():
     connection = sqlite3.connect(DB_FILE)

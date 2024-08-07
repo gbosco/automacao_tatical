@@ -1,4 +1,4 @@
-from selenium import webdriver
+from selenium.webdriver.chromium.webdriver import ChromiumDriver
 from selenium.webdriver import Keys, ActionChains
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.wait import WebDriverWait
@@ -13,7 +13,7 @@ def shift_enter(driver):
             .perform()
     
 
-def envia_msg(driver : webdriver.Chrome, telefone: str, msg, enviar=True, comprador = ''):
+def envia_msg(driver : ChromiumDriver, telefone: str, msg, enviar=True, comprador = ''):
     abre_aba_wpp(driver)
     telefone = telefone.replace(' ', '').replace('(','').replace(')', '').replace('-', '')
                                            
@@ -40,15 +40,18 @@ def envia_msg(driver : webdriver.Chrome, telefone: str, msg, enviar=True, compra
     
     driver.find_element(*seletor_input_msg).send_keys(telefone)
     driver.find_element(*seletor_input_msg).send_keys(Keys.ENTER)
-    
-    driver.find_element(By.XPATH,  f'//a[text() = "{telefone}"]').click()
 
-    time.sleep(5)
-    if len(driver.find_elements(By.CSS_SELECTOR,'div[aria-label="Conversar com "')) == 0:
-        raise Exception('sem_wpp')
-    
-    driver.find_element(By.CSS_SELECTOR,'div[aria-label="Conversar com "').click()
-    time.sleep(3)
+    while True:    
+        driver.find_element(By.XPATH,  f'//a[text() = "{telefone}"]').click()
+        time.sleep(5)
+        if len(driver.find_elements(By.CSS_SELECTOR,'div[aria-label="Conversar com "')) == 0:
+            raise Exception('sem_wpp')
+        
+        driver.find_element(By.CSS_SELECTOR,'div[aria-label="Conversar com "').click()
+        time.sleep(3)
+
+        if not driver.find_element(By.CSS_SELECTOR, '#main header > div:nth-child(2) > div:nth-child(1)').text.count('ABORDAGEM CLIENTES'):
+            break
 
     input_box_msg = driver.find_element(*seletor_input_msg)
     if type(msg) == str:
@@ -68,7 +71,7 @@ def envia_msg(driver : webdriver.Chrome, telefone: str, msg, enviar=True, compra
     #NUNCA FICAR COM A CONVERSA ABERTA
     element_grupo_abordagem.click()
 
-def abre_aba_wpp(driver : webdriver.Chrome):
+def abre_aba_wpp(driver : ChromiumDriver):
     if driver.current_url.count('web.whatsapp.com') == 0:
         abrir_nova = True
         for window_handle in driver.window_handles:

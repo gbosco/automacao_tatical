@@ -4,11 +4,14 @@ from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.common.by import By
 from opera_db import carrega_pedidos_nao_contatados, is_pedido_lido, insere_venda, set_pedido_chamado
 from opera_wpp import envia_msg
-import time, re, datetime as dt
+from navegador import fechar_tudo_zord
+from opera_mercado_turbo import nivelar_estoque, verifica_mercado_turbo, consulta_movimento_estoque
+
+import time, os, re, datetime as dt, traceback
 import tkinter as tk
 #import tkinter.messagebox as msgbox
 import pyautogui, pymsgbox, winsound
-
+from selenium.common.exceptions import NoSuchWindowException 
 
 def set_aba_zord(driver):
     if driver.current_url.count('https://taticalmilitaria.painel.magazord.com.br') == 0:
@@ -16,25 +19,58 @@ def set_aba_zord(driver):
     
     time.sleep(3)
 
-profile = 'Profile 7'#Mineiro
-profile = 'Default'#Jaque
-profile = 'Profile 2'#Irene
+os.system('taskkill /F /IM msedge.exe')
+somente_atualizar_estoque = True
 
-options = webdriver.ChromeOptions()
-options.add_argument('--no-sandbox')
-options.add_argument('--disable-dev-shm-usage')
-options.add_argument("user-data-dir=C:/Users/Felipe/AppData/Local/Google/Chrome/User Data")
+profile = 'Default'
+
+options = webdriver.EdgeOptions()
+#options.add_argument('user-data-dir=C:\\Users\\vinic\\AppData\\Local\\Google\\Chrome\\User Data')
+options.add_argument('user-data-dir=C:\\Users\\vinic\\AppData\\Local\\Microsoft\\Edge\\User Data')
 options.add_argument(f'profile-directory={profile}')
 
-driver = webdriver.Chrome(options=options)
+options.use_chromium = True
+#options.add_argument("headless")
+options.add_argument("disable-gpu")
+options.add_argument("no-sandbox")
+options.add_experimental_option("detach", True)
+
+driver = webdriver.Edge(options=options)
 
 driver.get('https://taticalmilitaria.painel.magazord.com.br')
-time.sleep(20)
+time.sleep(1)
+while len(driver.find_elements(By.ID, 'password')) > 0:
+    driver.find_element(By.ID, 'email').clear()
+    driver.find_element(By.ID, 'email').send_keys('taticalmilitaria@gmail.com')
+
+    driver.find_element(By.ID, 'password').clear()
+    driver.find_element(By.ID, 'password').send_keys('A786858z.')
+
+    driver.find_element(By.CSS_SELECTOR, 'button.submit').click()
+
+    time.sleep(7)
+
+time.sleep(2)
+fechar_tudo_zord(driver, 1)
+time.sleep(1)
 
 #Abrir pelo menu a tela de pedidos
 driver.find_element(By.CSS_SELECTOR, '.icon.icon-MAGAZORD').click()
 driver.find_element(By.XPATH, '//*[@id="area-superior"]/div/div[1]/ul/li[1]/ul/li[3]/div/span').click()
+                               
 time.sleep(3)
+
+'''
+atual = dt.datetime.today()
+d30 = atual - dt.timedelta(days = 30)
+sData30 = d30.strftime("%d/%m/%Y")
+
+filtro_data = driver.find_element(By.CSS_SELECTOR, '.x-container.grid-header-filter.x-container-default')\
+                        .find_elements(By.CSS_SELECTOR, 'input')[1]
+filtro_data.clear()
+time.sleep(1)
+filtro_data.send_keys(sData30)
+time.sleep(1)
 
 #Config apenas pedidos aprovados
 filtro_situacao = driver.find_element(By.CSS_SELECTOR, '[name="pedidoSituacao/codigo"]')
@@ -53,15 +89,7 @@ if not filtro_mkt.get_property('value'):
     filtro_mkt.click()
     time.sleep(0.5)
     driver.find_element(By.XPATH, "//li[text()='7 - Mercado Livre']").click()
-
-atual = dt.datetime.today()
-d30 = atual - dt.timedelta(days = 30)
-sData30 = d30.strftime("%d/%m/%Y")
-
-filtro_data = driver.find_element(By.CSS_SELECTOR, '.x-container.grid-header-filter.x-container-default')\
-                        .find_elements(By.CSS_SELECTOR, 'input')[1]
-filtro_data.clear()
-filtro_data.send_keys(sData30)
+'''
 
 rodando = True
 while rodando:
@@ -72,7 +100,10 @@ while rodando:
         time.sleep(2)
 
         list_vendas = list()
-        
+        #Desselecionar qualquer linha que eventualmente esteja selecionada, para evitar erros
+        for tr in driver.find_elements(By.CSS_SELECTOR, 'tr.x-grid-row-selected:has(div.x-grid-row-checker)'):
+            tr.find_element(By.CSS_SELECTOR, 'div.x-grid-row-checker').click()
+
         for tr in driver.find_elements(By.CSS_SELECTOR, 'tr.x-grid-row'):
 
             num_pedido = tr.find_element(By.CSS_SELECTOR, 'td:nth-child(3)').text
@@ -97,17 +128,23 @@ while rodando:
             print('Nome:', nome, 'CPF:', cpf_cnpj)
             
             list_venda_item = list()
-            for produto_html in driver.find_elements(By.CSS_SELECTOR, '.swiper-slide-active'):
+            for produto_html in driver.find_elements(By.CSS_SELECTOR, '.swiper-slide'):
                 nome_produto = produto_html.find_element(By.CSS_SELECTOR, '.nomeProduto').text
                 qtd_produto  = produto_html.find_element(By.CSS_SELECTOR, '.itemValue').text
+                sku          = produto_html.find_element(By.CSS_SELECTOR, '.codigoProduto').text.replace('\nCopiar', '')
 
-                list_venda_item.append((nome_produto, qtd_produto,''))
+                list_venda_item.append((nome_produto, qtd_produto, sku))
 
             dict_venda['itens'] = list_venda_item
             list_vendas.append(dict_venda)
 
+            #Fecha a última aba aberta (Do pedido que acabou de ler)
             driver.find_elements(By.CSS_SELECTOR, ".x-tab-close-btn")[-1].click()
             chechbox.click()
+        
+        
+        vendas_outras_contas = verifica_mercado_turbo(driver)
+        list_vendas.extend(vendas_outras_contas)
 
         #LER OS TELEFONES (ASSERTIVA)
         if len(list_vendas) > 0:
@@ -128,8 +165,9 @@ while rodando:
 
             while not logou_assert:
                 driver.get('https://painel.assertivasolucoes.com.br/login')
+                time.sleep(1.5)
                 if len(driver.find_elements(By.ID, 'password')) > 0:
-                    if driver.find_element(By.ID, 'email').text != '':
+                    if driver.find_element(By.ID, 'email').text == '':
                         driver.find_element(By.ID, 'email').send_keys('taticalmilitaria1@hotmail.com')
                         driver.find_element(By.ID, 'password').send_keys('Tatical0105.')
                         time.sleep(1)
@@ -174,9 +212,12 @@ while rodando:
                 if contador_espera > 100:
                     break
             
-            if len(driver.find_elements(By.XPATH,  f'//a[text() = "Não localizamos nenhum telefone"]')) > 0:
-                driver.find_element(By.XPATH,  f'//a[text() = "CONSULTAR TELEFONES RELACIONADOS"]').click()
-                time.sleep()
+            if len(driver.find_elements(By.CSS_SELECTOR, 'div.phone')) == 0:
+                try:
+                    driver.find_element(By.XPATH,  f'//*[text() = "CONSULTAR TELEFONES RELACIONADOS"]').click()
+                    time.sleep(2)
+                except:
+                    pass
             
             list_telefones = list()
             for telefone_html in driver.find_elements(By.CSS_SELECTOR, 'div.phone'):
@@ -210,6 +251,7 @@ while rodando:
             pyautogui.alert(title='ATENÇÃO', text='Nova(s) compra(s) identificadas. Não mexa na aba do whatsApp!', timeout=5000)
 
         for dict_venda in list_vendas_x:
+            
             if len(dict_venda['telefones']) == 0:
                 print(dict_venda['comprador'], 'Não tem telefone')
                 set_pedido_chamado(dict_venda['id'], 2)
@@ -224,10 +266,7 @@ while rodando:
             for i,item in enumerate(dict_venda['itens']):
                 if i > 0:
                     msgProdutos += ' e '
-                if len(item[2]) > 0:
-                    msgProdutos += '*'+str(item[1])+'x '+item[0]+' '+str(item[2]).replace('Variação: ','')+'*'
-                else:
-                    msgProdutos += '*'+str(item[1])+'x '+item[0]+'*'
+                msgProdutos += '*'+str(item[1])+'x '+item[0]+'*'
             
             msg_list.append(msgProdutos)
             msg_list.append('Confere?')
@@ -252,16 +291,19 @@ while rodando:
                     print('Erro:', dict_venda["comprador"], '-',telefone,'-',err)
             if sem_wpp:
                 set_pedido_chamado(dict_venda['id'], 3)
-
+            
         if len(list_vendas_x) > 0:
             root = tk.Tk()
             root.withdraw()
             root.after(5000, root.destroy)
             pyautogui.alert(title='PRONTO!!!', text='O programa já chamou todas as pessoas. Agora você pode continuar usando o navegador.!', timeout=3000)
+         
+        time.sleep(45)
 
-        time.sleep(30)
-
+    except NoSuchWindowException as ex:
+        pass
     except Exception as ex:
-        time.sleep(5)
-        print('Excption:::', ex)
+        print(':::Excption Type:::', type(ex))
+        print(':::Excption:::', ex)
+        traceback.print_exc()
 

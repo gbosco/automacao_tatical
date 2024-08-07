@@ -3,3 +3,7 @@
 \dist
 \__pycache__
 testes.py
+\automacao_tatical
+*.ipynb
+*.txt
+*.spec
