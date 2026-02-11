@@ -10,8 +10,8 @@ from requests.auth import HTTPBasicAuth
 
 def consulta_movimento_estoque(driver: ChromiumDriver):
     url = 'https://taticalmilitaria.painel.magazord.com.br/api/v1/listEstoque'
-    username = os.environ['token_api_zord'] 
-    password = os.environ['senha_api_zord'] 
+    username = os.environ['token_api_zord']
+    password = os.environ['senha_api_zord']
 
     limit = 100
     offset = 0
@@ -69,9 +69,11 @@ def nivelar_estoque(driver: ChromiumDriver, sku, quantidade):
     driver.find_elements(By.CSS_SELECTOR, "#form-nivelar-estoque .ui-selectbooleancheckbox.ui-chkbox")[1].click()
 
     #Botão de confirmar
-    driver.find_elements(By.CSS_SELECTOR, "#form-nivelar-estoque button")[1].click()
+    # driver.find_elements(By.CSS_SELECTOR, "#form-nivelar-estoque button")[1].click()
+    el = get_element_by_text(driver, 'Aplicar', multiple=True)[0]
+    click(driver, el)
     t.sleep(1)
-    driver.find_element(By.CSS_SELECTOR, '.ui-button.ui-confirmdialog-yes.mt-button-success').click()
+    driver.find_element(By.CSS_SELECTOR, '.ui-button.ui-confirmdialog-yes').click()
     t.sleep(1)
 
     while driver.find_element(By.CSS_SELECTOR, '.dialog-aguarde').get_attribute('aria-modal') == 'true':
@@ -84,25 +86,29 @@ def get_descricao_by_sku(sku):
     password = os.environ['senha_api_zord'] 
 
     response = requests.get(url, auth=HTTPBasicAuth(username, password), params={'codigo' : sku})
-
+    retorno = ''
     if response.status_code in (200,201):
-        return response.json()['data']['items'][0]['nomeCompleto']
+        try:
+            retorno = response.json()['data']['items'][0]['nomeCompleto']
+        except:#Com SKUs que não acha no zord, estava dando problema
+            ...
     else:
         print(f"Erro na requisição em get_descricao_by_sku: {response.status_code}")
         print(response.text)
 
+    return retorno
 
 
 def verifica_mercado_turbo(driver: ChromiumDriver):
     consulta_movimento_estoque(driver)
 
-    contas = ['BAKESHOP23', 'INKALION']
+    contas = ['TATICALMILITARIA3', 'TATICALMILITARIA2']
 
     abre_aba_mt(driver)
     driver.get('https://app.mercadoturbo.com.br/sistema/venda/vendas_ml')
     t.sleep(2)
 
-    conta_selecionada = driver.find_element(By.CSS_SELECTOR, 'li > form > div[role="combobox"] >  label').text
+    conta_selecionada = driver.find_element(By.CSS_SELECTOR, 'li > form').text
     contas.remove(conta_selecionada)
     contas.insert(0, conta_selecionada)
 
@@ -115,12 +121,21 @@ def verifica_mercado_turbo(driver: ChromiumDriver):
             get_element_by_text(driver, conta, texto_exato=False, tipo_tag='li').click()
             t.sleep(12)
 
-        for venda in driver.find_elements(By.CSS_SELECTOR, 'td.HeaderTextAlignLeft.CursorDefault.ColunaItemsVendas'):
-            num_venda = venda.find_element(By.CSS_SELECTOR, 'div.p-d-flex.p-ai-center > a > span:nth-child(2)').text
-            qtdd = venda.find_element(By.CSS_SELECTOR, 'div.Fs20').text.replace('x', '')
-            sku = venda.find_element(By.CSS_SELECTOR, 'span.p-ml-1').text
+        for venda in driver.find_elements(By.CSS_SELECTOR, 'td.HeaderTextAlignLeft.ColunaItemsVendas'):
+            num_venda = venda.find_element(By.CSS_SELECTOR, 'div.flex.align-items-center > a > span:nth-child(2)').text.replace('#\n', '')
+            qtdd = venda.find_element(By.CSS_SELECTOR, '.bg-yellow-400').text.replace('x', '')
+            sku = venda.find_element(By.CSS_SELECTOR, 'div.text-sm > span:nth-child(2)').text
+            
             nome_produto = get_descricao_by_sku(sku) #venda.find_element(By.CSS_SELECTOR, '.p-ml-1 .p-text-bold.p-d-inline').text
-            is_cancelamento = len(venda.find_elements(By.CSS_SELECTOR, 'div.Red')) > 0
+            is_cancelamento = len(venda.find_elements(By.CSS_SELECTOR, 'div.text-red-500')) > 0
+            dataCompraTxt = venda.find_element(By.CSS_SELECTOR, 'div.flex.align-items-center.text-sm').text[6:16]
+            
+            dataCompra = datetime.date(int(dataCompraTxt.split('/')[2]), int(dataCompraTxt.split('/')[1]), int(dataCompraTxt.split('/')[0]))
+            hoje = datetime.date.today()
+            
+            #Só deve ser "estornado" se for uma venda recente, ou seja, cancelada antes de enviada. Caso contrário, deve esperar ser devolvida e feito o processo de devolução normal onde o produto volta ao estoque quando a loja confirma a devolução.
+            if is_cancelamento and abs(hoje - dataCompra) > datetime.timedelta(days=3):
+                continue
 
             with open('controle_estoque.txt', 'r') as file:
                 file_content = file.read()
@@ -183,7 +198,7 @@ def verifica_mercado_turbo(driver: ChromiumDriver):
             response = requests.post(url, auth=HTTPBasicAuth(username, password), json=playload)
 
             # Verifica se a resposta foi bem-sucedida
-            if response.status_code == 200:
+            if response.status_code == 200 or response.text.count('Saldo insuficiente de quantidade') > 0:
                 # Converte a resposta JSON em um dicionário Python, se a resposta for JSON
                 print('Sucesso ao movimentar estoque:' + json.dumps(playload))
                 with open('controle_estoque.txt', 'a') as file:
@@ -206,5 +221,7 @@ def abre_aba_mt(driver : ChromiumDriver):
                 break
 
         if abrir_nova:
-            driver.execute_script("window.open('https://app.mercadoturbo.com.br/sistema/venda/vendas_ml');")
-            driver.switch_to.window(driver.window_handles[-1])
+            # driver.execute_script("window.open('https://app.mercadoturbo.com.br/sistema/venda/vendas_ml');")
+            # driver.switch_to.window(driver.window_handles[-1])
+            driver.switch_to.new_window('tab')
+            driver.get('https://app.mercadoturbo.com.br/sistema/venda/vendas_ml')

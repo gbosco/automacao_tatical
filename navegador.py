@@ -64,12 +64,15 @@ def fechar_tudo_zord(driver, qtdd = 10):
         try:
             click(driver, get_element_by_text(driver, 'OK'))
         except:
+            print('Fechar no OK falhou')
             pass
         try:
             click(driver, get_element_by_text(driver, 'Fechar', css_class='prev'))
         except:
+            print('Fechar no "Fechar" falhou')
             pass
         try:
-            driver.find_element(By.CSS_SELECTOR, 'div.close').click()
+            click(driver, driver.find_element(By.CSS_SELECTOR, 'div.close'))
         except:
+            print('Fechar no div.close falhou')
             pass

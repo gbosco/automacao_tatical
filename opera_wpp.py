@@ -4,6 +4,10 @@ from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.wait import WebDriverWait
 from selenium.webdriver.common.by import By
 import time
+import requests
+
+def remove_non_bmp(text):
+    return ''.join(c for c in text if ord(c) <= 0xFFFF)
 
 def shift_enter(driver):
         ActionChains(driver)\
@@ -24,8 +28,8 @@ def envia_msg(driver : ChromiumDriver, telefone: str, msg, enviar=True, comprado
           carregando = False
         time.sleep(0.1)
     
-    seletor_input_msg = (By.CSS_SELECTOR, 'div[aria-label="Digite uma mensagem"')
-    
+    seletor_input_msg = (By.CSS_SELECTOR, 'div[aria-placeholder="Digite uma mensagem"')
+        
     element_grupo_abordagem = None
     for element in driver.find_elements(*seletor_div_conversas):
         if element.text.count('ABORDAGEM CLIENTES') > 0:
@@ -53,9 +57,13 @@ def envia_msg(driver : ChromiumDriver, telefone: str, msg, enviar=True, comprado
         if not driver.find_element(By.CSS_SELECTOR, '#main header > div:nth-child(2) > div:nth-child(1)').text.count('ABORDAGEM CLIENTES'):
             break
 
-    input_box_msg = driver.find_element(*seletor_input_msg)
+    # msg = remove_non_bmp(msg)
+    seletor_input_msgg = (By.CSS_SELECTOR, 'div[aria-placeholder="Digite uma mensagem"')
+    input_box_msg = driver.find_element(*seletor_input_msgg)
+    input_box_msg.clear()
     if type(msg) == str:
         input_box_msg.send_keys(msg)
+        print("tentando digitar mensagem: ", msg)
     if type(msg) == list:
         for m_i in msg:
             if type(m_i) == str:
@@ -67,6 +75,7 @@ def envia_msg(driver : ChromiumDriver, telefone: str, msg, enviar=True, comprado
     if enviar:
         #Enter para enviar msg
         input_box_msg.send_keys(Keys.ENTER)
+        print("Tentando enviar mensagem")
 
     #NUNCA FICAR COM A CONVERSA ABERTA
     element_grupo_abordagem.click()
@@ -81,7 +90,24 @@ def abre_aba_wpp(driver : ChromiumDriver):
                 break
 
         if abrir_nova:
-            driver.execute_script("window.open('https://web.whatsapp.com');")
-            driver.switch_to.window(driver.window_handles[-1])
+            # driver.execute_script("window.open('https://web.whatsapp.com');")
+            # driver.switch_to.window(driver.window_handles[-1])
+            driver.switch_to.new_window('tab')
+            driver.get('https://web.whatsapp.com')
             
-            
+
+IP_MAQUINA_BOSCO_IPPE_MOTOS = 'evolutionapi.atendimentosmart.com.br'#ALTERAR AQUI SOMENTE O IP, SEM PORTA
+def enviar_mensagem_wpp_evolution_api(numero, mensagem):
+    url = f"http://{IP_MAQUINA_BOSCO_IPPE_MOTOS}/message/sendText/tatical"
+    payload = {
+        "number": f'55{numero}',
+        "text": mensagem,
+        "delay": 123
+    }
+    headers = {
+        "apikey": '4?2S45_}?pjxeI#Z;5',
+        "Content-Type": "application/json"
+    }
+    response = requests.post(url, json=payload, headers=headers)
+    
+    return response.status_code
