@@ -1,13 +1,13 @@
 from selenium import webdriver
 from selenium.webdriver.common.keys import Keys
-from selenium.webdriver.chrome.options import Options
+from selenium.webdriver.edge.options import Options as EdgeOptions
 from selenium.webdriver.common.by import By
 from opera_db import carrega_pedidos_nao_contatados, is_pedido_lido, insere_venda, set_pedido_chamado
 from opera_wpp import envia_msg
 from navegador import fechar_tudo_zord, get_element_by_text, click
 from opera_mercado_turbo import verifica_mercado_turbo
 from dotenv import load_dotenv
-from selenium.common.exceptions import StaleElementReferenceException
+from selenium.common.exceptions import NoSuchElementException, StaleElementReferenceException
 load_dotenv()
 
 import time, os, re, datetime as dt, traceback, requests
@@ -23,26 +23,23 @@ def set_aba_zord(driver):
             break
     time.sleep(3)
 
-os.system('taskkill /F /IM msedge.exe')
 somente_atualizar_estoque = True
 
-profile = 'Default'
+options = EdgeOptions()
 
-options = webdriver.EdgeOptions()
-#options.add_argument('user-data-dir=C:\\Users\\vinic\\AppData\\Local\\Google\\Chrome\\User Data')
-options.add_argument('user-data-dir=C:\\Users\\vinic\\AppData\\Local\\Microsoft\\Edge\\User Data')
-options.add_argument(f'profile-directory={profile}')
+options.add_argument(r"--user-data-dir=C:\Users\vinic\AppData\Local\Microsoft\Edge\User Data")
+options.add_argument("--profile-directory=Profile 1")
 
-options.use_chromium = True
-#options.add_argument("headless")
-options.add_argument("disable-gpu")
-options.add_argument("no-sandbox")
-options.add_experimental_option("detach", True)
+options.add_argument("--start-maximized")
+options.add_argument("--disable-gpu")
+options.add_argument("--no-sandbox")
+options.add_argument("--disable-dev-shm-usage")
 
 driver = webdriver.Edge(options=options)
-seletor_icon_maga = [By.CSS_SELECTOR, '.icon.icon-MAGAZORD']
 
-driver.get('https://taticalmilitaria.painel.magazord.com.br')
+seletor_icon_maga = (By.CSS_SELECTOR, ".icon.icon-MAGAZORD")
+
+driver.get("https://taticalmilitaria.painel.magazord.com.br")
 time.sleep(2)
 fechar_tudo_zord(driver, 2)
 
@@ -57,6 +54,8 @@ while len(driver.find_elements(By.ID, 'password')) > 0:
         
         driver.find_element(By.CSS_SELECTOR, 'button.submit').click()
     except StaleElementReferenceException:
+        pass
+    except NoSuchElementException:
         pass
 time.sleep(2)
 fechar_tudo_zord(driver, 2)
