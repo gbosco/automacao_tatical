@@ -98,7 +98,7 @@ def abre_aba_wpp(driver : ChromiumDriver):
 
 IP_MAQUINA_BOSCO_IPPE_MOTOS = 'evolutionapi.atendimentosmart.com.br'#ALTERAR AQUI SOMENTE O IP, SEM PORTA
 def enviar_mensagem_wpp_evolution_api(numero, mensagem):
-    url = f"http://{IP_MAQUINA_BOSCO_IPPE_MOTOS}/message/sendText/tatical"
+    url = f"http://{IP_MAQUINA_BOSCO_IPPE_MOTOS}/message/sendText/tatical-2026-02"
     payload = {
         "number": f'55{numero}',
         "text": mensagem,

@@ -23,12 +23,13 @@ def set_aba_zord(driver):
             break
     time.sleep(3)
 
+os.system('taskkill /F /IM msedge.exe')
 somente_atualizar_estoque = True
 
 options = EdgeOptions()
 
 options.add_argument(r"--user-data-dir=C:\Users\vinic\AppData\Local\Microsoft\Edge\User Data")
-options.add_argument("--profile-directory=Profile 1")
+options.add_argument("--profile-directory=Default")
 
 options.add_argument("--start-maximized")
 options.add_argument("--disable-gpu")

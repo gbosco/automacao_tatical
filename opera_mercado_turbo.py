@@ -59,6 +59,7 @@ def nivelar_estoque(driver: ChromiumDriver, sku, quantidade):
     if driver.current_url.count('https://app.mercadoturbo.com.br/sistema/anuncio/anuncios') == 0:
         driver.get('https://app.mercadoturbo.com.br/sistema/anuncio/anuncios')
         t.sleep(5)
+    if not bool(len(driver.find_elements(By.CSS_SELECTOR, '#form-nivelar-estoque input[type="integer"]'))):
         driver.find_element(By.XPATH, "//*[text()='Nivelar Estoque']").click()
         t.sleep(2)
 
@@ -66,7 +67,7 @@ def nivelar_estoque(driver: ChromiumDriver, sku, quantidade):
     driver.find_element(By.CSS_SELECTOR, '#form-nivelar-estoque input[type="text"]').send_keys(sku)
 
     #Checkbox para aplicar em todas as contas
-    driver.find_elements(By.CSS_SELECTOR, "#form-nivelar-estoque .ui-selectbooleancheckbox.ui-chkbox")[1].click()
+    driver.find_elements(By.CSS_SELECTOR, "#form-nivelar-estoque .ui-selectbooleancheckbox.ui-chkbox")[0].click()
 
     #Botão de confirmar
     # driver.find_elements(By.CSS_SELECTOR, "#form-nivelar-estoque button")[1].click()
